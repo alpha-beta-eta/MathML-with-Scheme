@@ -544,10 +544,28 @@
   (Mrow (Munder (Mo "lim")
                 (Mrow x $->0 a))
         e))
-(define (sum u o e)
-  (Mrow (Munderover (Mo "&sum;") u o) e))
-(define (prod u o e)
-  (Mrow (Munderover (Mo "&prod;") u o) e))
+(define $sum (Mo "&sum;"))
+(define $prod (Mo "&prod;"))
+(define (make-bigop op)
+  (case-lambda
+    ((u o e) (Mrow (Munderover op u o) e))
+    ((u e) (Mrow (Munder op u) e))
+    ((e) (Mrow op e))))
+(define-syntax define-bigop*
+  (syntax-rules ()
+    ((_ (id op) ...)
+     (begin
+       (define id (make-bigop op))
+       ...))))
+(define-bigop*
+  (sum $sum)
+  (prod $prod)
+  (Union $Union)
+  (Cup $Union)
+  (Intersect $Cap)
+  (Cap $Cap)
+  
+  )
 (define (integral a b e x)
   (Mrow (_^ $int a b) e
         ;(Mi "d" #:attr* '((mathvariant "normal")))
@@ -625,6 +643,7 @@
   (syntax-rules ()
     ((_ (x ...) ...)
      (det (list (list x ...) ...)))))
+#;
 (define (deriv x y . z*)
   (keyword-apply
    Mtable
@@ -634,23 +653,20 @@
                 (Mtr (Mtd $) (Mtd $=)
                      (Mtd #:attr* '((columnalign "left")) z)))
               z*))))
-(define (deriv0 x -> y . z*)
-  (define (make-line -> e)
-    (Mtr (Mtd $) (Mtd ->)
-         (Mtd #:attr* '((columnalign "left")) e)))
-  (define line*
-    (if (null? z*)
-        '()
-        (let iter ((-> (car z*)) (e (cadr z*)) (z* (cddr z*)) (r '()))
-          (if (null? z*)
-              (reverse (cons (make-line -> e) r))
-              (iter (car z*) (cadr z*) (cddr z*)
-                    (cons (make-line -> e) r))))))
+(define (make-row . x*)
+  (apply Mtr (map Mtd x*)))
+(define (deriv x y . z*)
   (keyword-apply
    Mtable
-   '(#:attr*) '(((displaystyle "true")))
-   (cons (Mtr (Mtd x) (Mtd ->) (Mtd #:attr* '((columnalign "left")) y))
-         line*)))
+   '(#:attr*) '(((displaystyle "true") (columnalign "right center left")))
+   (cons (make-row x $= y)
+         (map (lambda (z) (make-row $ $= z)) z*))))
+(define (deriv0 x -> y . z*)
+  (keyword-apply
+   Mtable
+   '(#:attr*) '(((displaystyle "true") (columnalign "right center left")))
+   (cons (make-row x -> y)
+         (map2 (lambda (-> w) (make-row $ -> w)) z*))))
 (define (tup . x*)
   (pare (apply &cm x*)))
 (define (tu0 . x*)
@@ -854,11 +870,25 @@
   (apply appl $max x*))
 (define (setEnum a b)
   (setE a $..h b))
+(define $->-> (Mo "&rrarr;"))
+(define $@-> (Mo "&rarrhk;"))
+(define $<- (Mo "&larr;"))
+(define $->> (Mo "&Rarr;"))
+(define $>-> (Mo "&rarrtl;"))
+(define $! (Mi "!"))
+(define $=> (Mo "&Implies;"))
+(define $forall (Mo "&forall;"))
+(define $exist (Mo "&exist;"))
+(define $exists $exist)
 (define-infix*
   (&\; $\;)
   (&equiv $equiv)
   (&t* $t*)
   (&: $:)
+  (&->> $->>)
+  (&>-> $>->)
+  (&->-> $->->)
+  (&@-> $@->)
   
   )
 (define (func:def f A B x fx)
