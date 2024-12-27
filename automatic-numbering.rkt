@@ -152,7 +152,7 @@
     (cond ((assoc id citation-table) => cdr)
           (else (error 'pass1 "unknown id ~s" id))))
   (define Tr
-    (T `((ref ,(lambda (ref empty id) (reify id))))))
+    (T `((ref *preorder* ,(lambda (ref empty id) (reify id))))))
   (define xml* (cdr exp))
   (map Tr xml*))
 ;automatic numbering
